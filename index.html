@@ -60,6 +60,10 @@
   .day-heads{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;}
   .dh{font-size:10px;color:var(--txt3);text-align:center;font-weight:500;}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .row-label{font-size:10px;color:var(--txt3);font-weight:500;padding:6px 0 2px;letter-spacing:.04em;}
+  .cal-row{display:grid;gap:4px;}
+  .cal-row-1{grid-template-columns:repeat(4,1fr);}
+  .cal-row-2{grid-template-columns:repeat(3,1fr);}
   .dc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:6px 4px;cursor:pointer;min-height:90px;-webkit-appearance:none;text-align:left;width:100%;}
   .dc.sel{border-color:var(--acc);background:var(--acc-bg);}
   .dnum{font-size:9px;color:var(--txt3);margin-bottom:3px;font-weight:500;}
@@ -139,11 +143,16 @@
 </div>
 
 <div class="cal-wrap">
-  <div class="day-heads">
-    <div class="dh">M</div><div class="dh">T</div><div class="dh">W</div>
-    <div class="dh">T</div><div class="dh">F</div><div class="dh">S</div><div class="dh">S</div>
+  <div class="row-label">Mon &rarr; Thu</div>
+  <div class="day-heads" style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:4px;">
+    <div class="dh">Mon</div><div class="dh">Tue</div><div class="dh">Wed</div><div class="dh">Thu</div>
   </div>
-  <div class="cal-grid" id="calGrid"></div>
+  <div class="cal-row cal-row-1" id="calRow1"></div>
+  <div class="row-label" style="margin-top:10px;">Fri &rarr; Sun</div>
+  <div class="day-heads" style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:4px;">
+    <div class="dh">Fri</div><div class="dh">Sat</div><div class="dh">Sun</div>
+  </div>
+  <div class="cal-row cal-row-2" id="calRow2"></div>
 </div>
 
 <div class="sheet-overlay" id="overlay"></div>
@@ -214,8 +223,10 @@ function renderStats(){
 
 function renderGrid(){
   var data=wd();
-  var grid=document.getElementById('calGrid');
-  grid.innerHTML='';
+  var row1=document.getElementById('calRow1');
+  var row2=document.getElementById('calRow2');
+  row1.innerHTML='';
+  row2.innerHTML='';
   data.days.forEach(function(d){
     var m=meal(d.mealId);
     var t=trn(d.day);
@@ -231,7 +242,8 @@ function renderGrid(){
     }
     btn.innerHTML=html;
     (function(date){btn.onclick=function(){openSheet(date);};})(d.date);
-    grid.appendChild(btn);
+    var isRow2=['Fri','Sat','Sun'].indexOf(d.day)>-1;
+    (isRow2?row2:row1).appendChild(btn);
   });
 }
 
