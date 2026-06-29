@@ -87,6 +87,19 @@
   .mm{font-size:8px;color:var(--txt3);}
   .fdot{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:2px;vertical-align:middle;flex-shrink:0;}
 
+  .tb-study{background:#fdf4ff;}
+  @media(prefers-color-scheme:dark){.tb-study{background:#2d1a3d;}}
+  .tb-study .tl{color:#6b21a8;}
+  @media(prefers-color-scheme:dark){.tb-study .tl{color:#d8b4fe;}}
+  .tb-study .ts{color:#9333ea;}
+  .study-box{background:#fdf4ff;border-radius:12px;padding:12px;margin-bottom:12px;border:1px solid #e9d5ff;}
+  @media(prefers-color-scheme:dark){.study-box{background:#2d1a3d;border-color:#581c87;}}
+  .study-box-title{font-size:15px;font-weight:600;color:#6b21a8;margin-bottom:4px;}
+  @media(prefers-color-scheme:dark){.study-box-title{color:#d8b4fe;}}
+  .study-box-desc{font-size:13px;color:var(--txt2);line-height:1.6;}
+  .study-pill{display:inline-block;font-size:11px;padding:3px 9px;border-radius:99px;margin-top:7px;background:#f3e8ff;color:#7e22ce;border:1px solid #d8b4fe;}
+  @media(prefers-color-scheme:dark){.study-pill{background:#3b1d5e;color:#e9d5ff;border-color:#7e22ce;}}
+
   /* Detail sheet */
   .sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:none;}
   .sheet-overlay.open{display:block;}
@@ -127,6 +140,7 @@
 <div class="tog-row">
   <button class="tog on" id="togT">&#127939; Training</button>
   <button class="tog on" id="togM">&#127869; Meals</button>
+  <button class="tog on" id="togS">&#128218; Study</button>
 </div>
 
 <div class="stats" id="statsEl"></div>
@@ -139,7 +153,7 @@
   <div class="leg"><div class="ld" style="background:#f59e0b"></div>Match</div>
   <div class="leg"><div class="ld" style="background:#9ca3af"></div>Rest</div>
   <div class="leg"><div class="ld" style="background:#10b981"></div>Fresh cook</div>
-  <div class="leg"><div class="ld" style="background:#f59e0b"></div>Leftovers</div>
+  <div class="leg"><div class="ld" style="background:#9333ea"></div>Study</div>
 </div>
 
 <div class="cal-wrap">
@@ -193,8 +207,38 @@ var PLAN=[
 ];
 
 var TC={rest:"tb-rest",recovery:"tb-recovery",aerobic:"tb-aerobic",speed:"tb-speed",soccer:"tb-soccer",match:"tb-match"};
-var week=1,selDate=null,showT=true,showM=true;
+var week=1,selDate=null,showT=true,showM=true,showS=true;
 
+// Study plan: Chapters 1-7 spread across 21 days (3 per chapter = 21 days)
+// Lighter days (Mon recovery, Sat rest) get harder chapters; match days get lighter review
+var STUDY=[
+  // Week 1
+  {date:1, ch:1, topic:"Algebra, equations & linear relationships", focus:"Linear equations & solving for x", mins:60},
+  {date:2, ch:1, topic:"Algebra, equations & linear relationships", focus:"Simultaneous equations", mins:60},
+  {date:3, ch:2, topic:"Geometry and networks", focus:"Angle rules & geometric proofs", mins:60},
+  {date:4, ch:2, topic:"Geometry and networks", focus:"Network diagrams & paths", mins:60},
+  {date:5, ch:3, topic:"Indices, exponentials & logarithms", focus:"Index laws & simplification", mins:60},
+  {date:6, ch:3, topic:"Indices, exponentials & logarithms", focus:"Exponential functions & graphs", mins:60},
+  {date:7, ch:1, topic:"Ch 1–3 review", focus:"Light review — 30 min only on match day", mins:30},
+  // Week 2
+  {date:8, ch:4, topic:"Measurements and surds", focus:"Surds — simplifying & operations", mins:60},
+  {date:9, ch:4, topic:"Measurements and surds", focus:"Measurement — area, volume, surface area", mins:60},
+  {date:10, ch:5, topic:"Quadratic expressions & equations", focus:"Expanding & factorising quadratics", mins:60},
+  {date:11, ch:5, topic:"Quadratic expressions & equations", focus:"Quadratic formula & solving", mins:60},
+  {date:12, ch:6, topic:"Trigonometry", focus:"SOHCAHTOA & exact values", mins:60},
+  {date:13, ch:6, topic:"Trigonometry", focus:"Sine & cosine rules", mins:60},
+  {date:14, ch:4, topic:"Ch 4–6 review", focus:"Light review — 30 min only on match day", mins:30},
+  // Week 3
+  {date:15, ch:7, topic:"Parabolas and rates of change", focus:"Parabola features — vertex, intercepts", mins:60},
+  {date:16, ch:7, topic:"Parabolas and rates of change", focus:"Rates of change & gradient functions", mins:60},
+  {date:17, ch:5, topic:"Quadratic expressions & equations", focus:"Harder quadratics & word problems", mins:60},
+  {date:18, ch:7, topic:"Parabolas and rates of change", focus:"Sketching parabolas & applications", mins:60},
+  {date:19, ch:3, topic:"Indices, exponentials & logarithms", focus:"Logarithm introduction & log laws", mins:60},
+  {date:20, ch:2, topic:"Geometry and networks", focus:"Revision — geometry exam-style questions", mins:60},
+  {date:21, ch:7, topic:"Ch 7 & overall review", focus:"Light review — 30 min only on match day", mins:30},
+];
+
+function study(date){return STUDY.find(function(s){return s.date===date;});}
 function meal(id){return MEALS.find(function(m){return m.id===id;});}
 function trn(day){return TR.find(function(t){return t.day===day;});}
 function wd(){return PLAN.find(function(p){return p.week===week;});}
@@ -236,6 +280,10 @@ function renderGrid(){
     if(showT&&t){
       html+='<div class="tb '+TC[t.type]+'"><div class="tl">'+t.label+'</div><div class="ts">'+t.dur+'</div></div>';
     }
+    if(showS){
+      var s=study(d.date);
+      if(s) html+='<div class="tb tb-study"><div class="tl">Ch '+s.ch+'</div><div class="ts">'+s.mins+' min</div></div>';
+    }
     if(showM){
       var col=d.lft?'#f59e0b':'#10b981';
       html+='<div class="mb"><span class="fdot" style="background:'+col+'"></span><span class="mn">'+m.name+'</span><div class="mm">~'+m.kcal+' kcal</div></div>';
@@ -255,6 +303,7 @@ function openSheet(date){
   renderGrid();
   var m=meal(d.mealId);
   var t=trn(d.day);
+  var s=study(d.date);
 
   var trHtml='';
   if(t){
@@ -263,6 +312,16 @@ function openSheet(date){
       '<div class="tbox-title">'+t.title+'</div>'+
       '<div class="tbox-desc">'+t.desc+'</div>'+
       '<span class="rpe-pill">'+t.rpe+' &middot; '+t.dur+'</span>'+
+      '</div><div class="divider"></div>';
+  }
+
+  var studyHtml='';
+  if(s){
+    studyHtml='<div class="sec-head">Study &mdash; '+s.mins+' min</div>'+
+      '<div class="study-box">'+
+      '<div class="study-box-title">Chapter '+s.ch+': '+s.topic+'</div>'+
+      '<div class="study-box-desc">Focus: '+s.focus+'</div>'+
+      '<span class="study-pill">&#128218; '+s.mins+' min &middot; Ch '+s.ch+'</span>'+
       '</div><div class="divider"></div>';
   }
 
@@ -278,7 +337,7 @@ function openSheet(date){
   document.getElementById('sheetInner').innerHTML=
     '<div class="sheet-title">'+d.day+', Day '+d.date+'</div>'+
     '<div class="sheet-sub">'+(t?t.label+' day':'Rest')+' &middot; '+(d.lft?'Leftovers':'Fresh cook')+'</div>'+
-    trHtml+mealHtml+
+    trHtml+studyHtml+mealHtml+
     '<div class="divider"></div>'+
     '<div class="sec-head">Quick actions</div>'+
     '<div class="action-list">'+
@@ -322,6 +381,7 @@ document.getElementById('prevBtn').onclick=function(){if(week>1){week--;selDate=
 document.getElementById('nextBtn').onclick=function(){if(week<3){week++;selDate=null;render();}};
 document.getElementById('togT').onclick=function(){showT=!showT;this.className='tog'+(showT?' on':'');renderGrid();};
 document.getElementById('togM').onclick=function(){showM=!showM;this.className='tog'+(showM?' on':'');renderGrid();};
+document.getElementById('togS').onclick=function(){showS=!showS;this.className='tog'+(showS?' on':'');renderGrid();};
 document.getElementById('overlay').onclick=closeSheet;
 
 render();
